@@ -20,8 +20,8 @@ def reports_etl():
 
 with DAG(
     dag_id='sprint5_dds_to_cdm_dag',
-    schedule_interval='0/15 * * * *',
-    start_date=datetime.datetime.today() - datetime.timedelta(minutes=20),
+    schedule_interval='0 0 2 * *',
+    start_date=datetime.datetime.today() - datetime.timedelta(days=31),
     catchup=False,
     dagrun_timeout=datetime.timedelta(seconds=60),
     tags=['sprint5', 'dds', 'cdm']
