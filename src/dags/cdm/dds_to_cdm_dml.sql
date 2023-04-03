@@ -45,4 +45,13 @@ SELECT
     *,
     courier_order_sum + courier_tips_sum * 0.95 AS courier_reward_sum
 FROM summary
-
+ON CONFLICT (courier_id, settlement_year, settlement_month) DO UPDATE
+SET
+    courier_name = EXCLUDED.courier_name,
+    orders_count = EXCLUDED.orders_count,
+    orders_total_sum = EXCLUDED.orders_total_sum,
+    rate_avg = EXCLUDED.rate_avg,
+    order_processing_fee = EXCLUDED.order_processing_fee,
+    courier_order_sum = EXCLUDED.courier_order_sum,
+    courier_tips_sum = EXCLUDED.courier_tips_sum,
+    courier_reward_sum = EXCLUDED.courier_reward_sum;
