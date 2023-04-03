@@ -13,7 +13,7 @@ from lib import ConnectionBuilder
 log = logging.getLogger(__name__)
 
 @dag(
-    schedule_interval='0/15 * * * *',  # Задаем расписание выполнения дага - каждый 15 минут.
+    schedule_interval='15,25,35,45,55 * * * *',  # Задаем расписание выполнения дага - каждую 15-ю, 25-ю,..., 55-ю минуту каждого часа.
     start_date=pendulum.datetime(2022, 5, 5, tz="UTC"),  # Дата начала выполнения дага. Можно поставить сегодня.
     catchup=False,  # Нужно ли запускать даг за предыдущие периоды (с start_date до сегодня) - False (не нужно).
     tags=['sprint5', 'dds', 'stg'],  # Теги, используются для фильтрации в интерфейсе Airflow.
