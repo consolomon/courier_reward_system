@@ -19,7 +19,6 @@ FROM dds.fct_delivery_reports AS dfr
 LEFT JOIN dds.dm_couriers AS dc ON
     dfr.courier_id = dc.id
 WHERE
-    dfr.courier_id > %(load_treshold)s AND
     DATE_PART('year', order_ts) = DATE_PART('year', CURRENT_DATE) AND
     DATE_PART('month', order_ts) = DATE_PART('month', CURRENT_DATE) - 1   
 GROUP BY 
@@ -28,7 +27,6 @@ GROUP BY
     settlement_year,
     settlement_month
 ORDER BY dfr.courier_id ASC
-LIMIT %(batch_limit)s
 )
 INSERT INTO cdm.dm_courier_ledger (
     courier_id,
