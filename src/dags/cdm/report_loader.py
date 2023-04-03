@@ -11,8 +11,7 @@ from psycopg import Connection
 class ReportLoader:
 
     WF_KEY = "cdm_courier_ledger_workflow"
-    LAST_LOADED_ID_KEY = "last_loaded_courier_id"
-    BATCH_LIMIT = 100
+    LAST_LOADED_TS_KEY = "last_loaded_settlement_ts"
     
     def __init__(self, pg_dest: PgConnect, logger: Logger, path_to_script: str) -> None:
         self.pg_dest = pg_dest
@@ -34,37 +33,30 @@ class ReportLoader:
                 wf_setting = EtlSetting(
                     id=0,
                     workflow_key=self.WF_KEY,
-                    workflow_settings={self.LAST_LOADED_ID_KEY: 0}
+                    workflow_settings={self.LAST_LOADED_TS_KEY: datetime.today() - timedelta(days=31)}
                 )
-            last_loaded_id = wf_setting.workflow_settings[self.LAST_LOADED_ID_KEY]
-            id_range = self.get_couriers_count(conn) - last_loaded_id
-            if id_range > 0:
+            last_loaded_ts = wf_setting.workflow_settings[self.LAST_LOADED_TS_KEY]
+            self.log.info(f"Last timestamp of courier_ledger report is {str(last_loaded_ts)}")
+            id_range = self.get_couriers_count(conn)
+            if (id_range > 0) and (datetime.today() - timedelta(days=20) >= last_loaded_ts):
                 self.log.info(f"Found {id_range} couriers to sync.")
-                self.insert_reports(conn, last_loaded_id, self.BATCH_LIMIT, self.path_to_script)
+                self.insert_reports(conn, self.path_to_script)
             else:    
                 self.log.info("Quitting.")
                 return 0
-            
-            processed_range = min(self.BATCH_LIMIT, id_range)
-            self.log.info(f"Processed {processed_range} days while syncing.")
+            self.log.info(f"Processed {id_range} days while syncing.")
 
-            wf_setting.workflow_settings[self.LAST_LOADED_ID_KEY] += processed_range
+            wf_setting.workflow_settings[self.LAST_LOADED_ts_KEY] = datetime.today()
             wf_setting_json = json2str(wf_setting.workflow_settings)
             self.settings_repository.set_setting(conn, wf_setting.workflow_key, wf_setting_json)
 
         return processed_range
 
 
-    def insert_reports(self, conn: Connection, load_treshold: int, batch_limit: int, path_to_script: str) -> None:
+    def insert_reports(self, conn: Connection, path_to_script: str) -> None:
         script = Path(path_to_script).read_text()
         with conn.cursor() as cur:
-            cur.execute(
-                script,
-                {
-                    "load_treshold": load_treshold,
-                    "batch_limit": batch_limit
-                }
-            )
+            cur.execute(script)
 
 
     def get_couriers_count(self, conn: Connection) -> int:
